@@ -12,6 +12,7 @@ for reference and are **not** part of the supported platform.
 | `tomato_disease_app.py` | `cropmon.models.fusion` + dashboard Model tab |
 | MATLAB index montage | `matlab/index_panel.m` + `cropmon.viz.index_panel` |
 | `matlab_output/CropHealthSummary.csv` | `data/class_summary.csv` (written by the pipeline) |
+| `figures/legacy_0*.png` (9 uploads) | `docs/figures/index_panel.png` — see `figures/README.md` |
 
 Changes made while archiving:
 
@@ -36,3 +37,6 @@ into the formula without the `+1` (L) term.
 The current pipeline writes the same schema (`Class,PixelCount`) from a real
 NDVI + red-edge classification: 5517 healthy / 3035 moderate / 664 stressed on
 the default snapshot. See `matlab/index_panel.m` for the corrected MATLAB path.
+
+The nine figures the team uploaded are archived unchanged in `figures/`, with the
+per-file breakdown and the defects visible in them in `figures/README.md`.
