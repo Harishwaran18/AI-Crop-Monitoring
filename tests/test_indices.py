@@ -8,6 +8,7 @@ from cropmon.features.indices import (
     compute_indices,
     evi,
     gndvi,
+    msavi,
     ndre,
     ndvi,
     psri,
@@ -35,6 +36,15 @@ def test_index_identities():
     assert cire(np.array([nir]), np.array([red_edge]))[0] == pytest.approx(nir / red_edge - 1)
 
 
+def test_msavi_matches_formula_and_separates_soil_from_canopy():
+    nir, red = np.array([0.46]), np.array([0.04])
+    term = 2 * nir + 1
+    expected = (term - np.sqrt(term**2 - 8 * (nir - red))) / 2
+    assert msavi(nir, red)[0] == pytest.approx(expected[0])
+    assert msavi(nir, red)[0] > 0.5
+    assert msavi(np.array([0.20]), np.array([0.22]))[0] < 0.05
+
+
 def test_band_index_picks_nearest():
     assert DEFAULT_WAVELENGTHS[band_index(DEFAULT_WAVELENGTHS, 705)] == 710
     with pytest.raises(ValueError):
@@ -44,7 +54,7 @@ def test_band_index_picks_nearest():
 def test_compute_indices_shape_and_keys():
     cube = np.full((5, 6, len(DEFAULT_WAVELENGTHS)), 0.2)
     result = compute_indices(cube)
-    assert set(result) == {"ndvi", "gndvi", "ndre", "savi", "evi", "ndwi", "psri", "cire"}
+    assert set(result) == {"ndvi", "gndvi", "ndre", "savi", "msavi", "evi", "ndwi", "psri", "cire"}
     assert all(values.shape == (5, 6) for values in result.values())
 
 

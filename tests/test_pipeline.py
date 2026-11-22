@@ -45,7 +45,7 @@ def test_alerts_are_serialisable(pipeline_result: PipelineResult):
 
 
 def test_maps_contain_every_index(pipeline_result: PipelineResult):
-    for name in ("ndvi", "ndre", "savi", "ndwi", "psri", "cire", "risk", "zones"):
+    for name in ("ndvi", "ndre", "savi", "msavi", "ndwi", "psri", "cire", "risk", "zones", "classes"):
         assert name in pipeline_result.maps
     assert pipeline_result.maps["ndvi"].shape == tuple(pipeline_result.summary["field_shape"])
 
@@ -76,3 +76,14 @@ def test_ndvi_map_matches_zones_mean(pipeline_result: PipelineResult):
     ndvi = pipeline_result.maps["ndvi"]
     zone = int(zone_ids[0, 0])
     assert np.isclose(np.nanmean(ndvi[zone_ids == zone]), zones.loc[zone, "ndvi"], atol=1e-9)
+
+
+def test_pixel_classification_exported(pipeline_result: PipelineResult):
+    classes = pipeline_result.maps["classes"]
+    counts = pipeline_result.summary["class_counts"]
+    assert classes.shape == tuple(pipeline_result.summary["field_shape"])
+    assert set(counts) == {"Stressed", "Moderate", "Healthy"}
+    assert sum(counts.values()) <= classes.size
+    summary_csv = pipeline_result.settings.data_dir / "class_summary.csv"
+    assert summary_csv.exists()
+    assert "PixelCount" in summary_csv.read_text().splitlines()[0]

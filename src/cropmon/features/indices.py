@@ -18,6 +18,7 @@ INDEX_DESCRIPTIONS = {
     "gndvi": "Green NDVI (NIR, green): sensitive to chlorophyll concentration",
     "ndre": "Normalised Difference Red Edge (NIR, red edge): early stress detection",
     "savi": "Soil Adjusted Vegetation Index (NIR, red): corrects for soil background",
+    "msavi": "Modified SAVI (NIR, red): self-adjusting soil correction for sparse canopies",
     "evi": "Enhanced Vegetation Index (NIR, red, blue): resists atmosphere and canopy saturation",
     "ndwi": "Normalised Difference Water Index (NIR, green): canopy water content",
     "psri": "Plant Senescence Reflectance Index: detects canopy senescence",
@@ -53,6 +54,14 @@ def ndre(nir: np.ndarray, red_edge: np.ndarray) -> np.ndarray:
 
 def savi(nir: np.ndarray, red: np.ndarray, soil_factor: float = 0.5) -> np.ndarray:
     return _safe_ratio((nir - red) * (1.0 + soil_factor), nir + red + soil_factor)
+
+
+def msavi(nir: np.ndarray, red: np.ndarray) -> np.ndarray:
+    """Modified SAVI (Qi et al., 1994): the soil factor is derived from the pixels."""
+    nir = np.asarray(nir, dtype=float)
+    red = np.asarray(red, dtype=float)
+    term = 2.0 * nir + 1.0
+    return (term - np.sqrt(np.clip(term**2 - 8.0 * (nir - red), 0.0, None))) / 2.0
 
 
 def evi(nir: np.ndarray, red: np.ndarray, blue: np.ndarray) -> np.ndarray:
@@ -93,6 +102,7 @@ def compute_indices(
         "gndvi": gndvi(nir, green),
         "ndre": ndre(nir, red_edge),
         "savi": savi(nir, red),
+        "msavi": msavi(nir, red),
         "evi": evi(nir, red, blue),
         "ndwi": ndwi(nir, green),
         "psri": psri(red, blue, nir),

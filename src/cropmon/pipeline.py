@@ -15,6 +15,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from cropmon.alerts.rules import Alert, AlertEngine, evaluate_zones
+from cropmon.analysis.classification import class_counts, classify_canopy
 from cropmon.analysis.risk import risk_level
 from cropmon.analysis.zones import health_class, health_score, summarise_map, zone_map
 from cropmon.config import Settings
@@ -22,6 +23,7 @@ from cropmon.data.dataset import RISK_CLASS_NAMES, build_zone_dataset
 from cropmon.data.synthetic import simulate_field, simulate_history, simulate_sensors
 from cropmon.features.indices import DEFAULT_WAVELENGTHS, INDEX_DESCRIPTIONS, compute_indices
 from cropmon.models.fusion import RiskModel, train_risk_model
+from cropmon.viz import index_panel
 
 ARTIFACT_VERSION = "1.0.0"
 
@@ -84,6 +86,8 @@ def _plot_figures(result: PipelineResult) -> dict[str, Path]:
     ax.set_ylabel("pixel row")
     fig.colorbar(image, ax=ax, label="risk probability")
     figures["risk_map"] = _save(fig, out / "risk_map.png")
+
+    figures["index_panel"] = index_panel(result.maps, result.maps["classes"], out / "index_panel.png")
 
     daily = (
         sensors.set_index("timestamp")
@@ -171,6 +175,7 @@ def run_pipeline(settings: Settings | None = None, make_figures: bool = True) ->
     engine = AlertEngine(cooldown_hours=settings.alert_cooldown_hours)
     alerts = engine.filter(evaluate_zones(zones))
 
+    classes = classify_canopy(indices)
     risk_map = zones.set_index("zone_id")["risk_probability"].to_numpy()[zones_index]
     result = PipelineResult(
         settings=settings,
@@ -181,7 +186,7 @@ def run_pipeline(settings: Settings | None = None, make_figures: bool = True) ->
         metrics=metrics,
         summary={},
         model=model,
-        maps={**indices, "risk": risk_map, "zones": zones_index},
+        maps={**indices, "risk": risk_map, "zones": zones_index, "classes": classes},
     )
 
     result.summary = _build_summary(result, field.shape)
@@ -214,7 +219,8 @@ def _build_summary(result: PipelineResult, field_shape: tuple[int, int]) -> dict
             "n_test": result.metrics["n_test"],
         },
         "top_features": [row["feature"] for row in result.metrics["feature_importance"][:5]],
-        "index_names": [name for name in result.maps if name not in {"risk", "zones"}],
+        "index_names": [name for name in result.maps if name not in {"risk", "zones", "classes"}],
+        "class_counts": class_counts(result.maps["classes"]),
         "data_source": result.metrics["data_source"],
     }
 
@@ -224,6 +230,10 @@ def _write_artifacts(result: PipelineResult) -> None:
     result.sensors.to_csv(settings.data_dir / "sensors.csv", index=False)
     result.history.to_csv(settings.data_dir / "zone_history.csv", index=False)
     result.zones.to_csv(settings.zones_path, index=False)
+    pd.DataFrame(
+        [(label, count) for label, count in result.summary["class_counts"].items()],
+        columns=["Class", "PixelCount"],
+    ).to_csv(settings.data_dir / "class_summary.csv", index=False)
 
     np.savez_compressed(
         settings.data_dir / "spectral_maps.npz",

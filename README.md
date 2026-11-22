@@ -16,6 +16,7 @@ uvicorn cropmon.api.main:app --app-dir src   # REST API on :8000
 ```
 
 ![Dashboard overview](docs/figures/dashboard.png)
+![Spectral index panel and canopy classification](docs/figures/index_panel.png)
 
 ![NDVI health map](docs/figures/ndvi_map.png)
 ![Predicted risk by zone](docs/figures/risk_map.png)
@@ -28,6 +29,8 @@ uvicorn cropmon.api.main:app --app-dir src   # REST API on :8000
 | Spectral indices | `cropmon.features.indices` | NDVI, GNDVI, NDRE, SAVI, EVI, NDWI, PSRI, CIre |
 | Temporal analysis | `cropmon.features.temporal` | Rolling means, least-squares slope, MAD z-scores, anomaly flags |
 | Zone analytics | `cropmon.analysis` | Per-zone index statistics, 0-100 health score, disease pressure, water/heat stress |
+| Pixel classification | `cropmon.analysis.classification` | Stressed / Moderate / Healthy map, `data/class_summary.csv` |
+| Index panel | `cropmon.viz` | Six-index montage plus class map (`docs/figures/index_panel.png`) |
 | Fusion model | `cropmon.models.fusion` | Gradient-boosted 3-class risk model + permutation importance |
 | Alerting | `cropmon.alerts` | Rule engine with cooldown/dedupe, console/Twilio/Fast2SMS channels, token-bucket rate limit |
 | Serving | `dashboard/`, `cropmon.api` | 5-tab Streamlit app, FastAPI endpoints |
@@ -73,9 +76,15 @@ Labels carry 8 % scouting noise so the metrics are not perfectly separable.
 | Train / test zones | 179 / 77 |
 | Mean canopy health | 66.7 / 100 |
 | Risk mix | 135 low · 93 moderate · 28 high |
+| Pixel classes | 5517 healthy · 3035 moderate · 664 stressed (of 9216 px) |
 | Alerts | 200 (28 critical, 154 warning, 18 info) |
 
 Top drivers: PSRI (senescence), NDVI, soil moisture, leaf-wetness fraction, GNDVI.
+
+The classification panel is the corrected version of the original MATLAB montage:
+EVI stays inside 0-1.1 instead of -5000..1000, and the class map is not a single
+colour. Nine indices are computed (including MSAVI); seven of them feed the model,
+because MSAVI is collinear with SAVI on this simulator and adds no signal.
 
 ![Feature importance](docs/figures/feature_importance.png)
 ![Confusion matrix](docs/figures/confusion_matrix.png)
@@ -105,6 +114,9 @@ python scripts/train_model.py           # retrain and print holdout metrics
 python scripts/generate_demo_data.py    # raw CSVs only, no model
 ```
 
+`data/class_summary.csv` mirrors the MATLAB export (`Class,PixelCount`) so the
+pixel-class breakdown can be diffed against the prototype output.
+
 Artifacts land in `artifacts/` (model, metrics, zones, alerts) and `data/` (sensors,
 history, spectral maps). Both directories are git-ignored because they are reproducible.
 
@@ -114,8 +126,8 @@ history, spectral maps). Both directories are git-ignored because they are repro
 streamlit run dashboard/app.py
 ```
 
-Tabs: **Overview** (KPIs, risk map, priority zones) · **Spectral health** (index maps,
-zone signature) · **Trends** (anomaly-marked NDVI, per-zone trajectories, sensors) ·
+Tabs: **Overview** (KPIs, risk map, priority zones) · **Spectral health** (index maps
+including MSAVI, zone signature, pixel classification) · **Trends** (anomaly-marked NDVI, per-zone trajectories, sensors) ·
 **Alerts** (filter, CSV export, SMS delivery) · **Model** (metrics, importance, model card).
 
 The dashboard runs the pipeline automatically on first load if artifacts are missing.

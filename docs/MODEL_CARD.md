@@ -59,6 +59,14 @@ Confusion matrix (rows = actual, columns = predicted):
 Permutation importance (accuracy drop, 5 repeats): PSRI 0.338, NDVI 0.039,
 soil moisture 0.029, leaf-wetness fraction 0.016, GNDVI 0.013.
 
+## Feature ablation: MSAVI
+
+MSAVI was evaluated as an 18th feature and measured permutation importance of
+**0.000** with unchanged holdout metrics. It is collinear with SAVI on this
+simulator, so it is exposed as a map and used by the pixel classifier but left
+out of the model input. Adding it back is one line in `FEATURE_COLUMNS`; do so
+only after measuring it on real data.
+
 ## Interpretation
 
 The metrics measure **how well the model reproduces the simulator's agronomic model**.
