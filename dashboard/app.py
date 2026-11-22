@@ -137,9 +137,25 @@ def render_spectral(art: dict) -> None:
     st.plotly_chart(figure, use_container_width=True)
 
     st.caption(
-        "NDVI/GNDVI/NDRE track chlorophyll and canopy density, SAVI corrects for soil background, "
+        "NDVI/GNDVI/NDRE track chlorophyll and canopy density, SAVI and MSAVI correct for soil background, "
         "NDWI tracks canopy water, PSRI detects senescence, CIre is sensitive to chlorophyll at high leaf area."
     )
+
+    if "classes" in maps:
+        st.subheader("Pixel classification")
+        classes = np.asarray(maps["classes"])
+        palette = np.array([[198, 40, 40], [249, 168, 37], [46, 125, 50]], dtype=np.uint8)
+        rgb = np.where((classes < 0)[..., None], 255, palette[np.clip(classes, 0, 2)]).astype(np.uint8)
+        figure = px.imshow(rgb, title="Stressed / Moderate / Healthy (NDVI with red-edge downgrade)")
+        figure.update_layout(height=430, margin=dict(l=10, r=10, t=50, b=10))
+        figure.update_xaxes(visible=False)
+        figure.update_yaxes(visible=False)
+        st.plotly_chart(figure, use_container_width=True)
+        counts = art["summary"].get("class_counts", {})
+        total = sum(counts.values()) or 1
+        st.caption(
+            " · ".join(f"{label}: {count:,} px ({100 * count / total:.1f}%)" for label, count in counts.items())
+        )
 
 
 def render_temporal(art: dict) -> None:
