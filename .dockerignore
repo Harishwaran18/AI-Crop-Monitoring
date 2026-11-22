@@ -1,0 +1,9 @@
+data/
+artifacts/
+docs/figures/
+legacy/
+tests/
+.git/
+.env
+*.joblib
+*.npz
