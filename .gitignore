@@ -10,9 +10,9 @@ venv/
 env/
 
 # Generated data and artifacts (reproducible with scripts/run_pipeline.py)
-data/
-artifacts/
-models/
+/data/
+/artifacts/
+/models/
 *.joblib
 *.h5
 *.keras
