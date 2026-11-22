@@ -21,6 +21,9 @@ file prefix.
 | `legacy_08_sensor_trend_soil_moisture.png` | matplotlib line chart, 6 points, "Sample Data" |
 | `legacy_09_sensor_trend_temperature.png` | matplotlib line chart, 6 points, "Sample Data" |
 
+A side-by-side comparison against the current pipeline is in
+`docs/figures/before_after.png`; regenerate it with `scripts/make_before_after.py`.
+
 ## Defects visible in these files
 
 1. **EVI is off by three orders of magnitude.** The colourbar in
